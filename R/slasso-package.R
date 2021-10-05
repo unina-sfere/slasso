@@ -44,7 +44,6 @@ NULL
 #' pvalue_hampel_vec<-per_list_hampel$pval_vec
 #' per_list_optimal<-rofanova(X_fdata,label_1,B = B,family="optimal",cores=cores)
 #' pvalue_optimal<-per_list_optimal$pval
-#'@import fda.usc robustbase
 "_PACKAGE"
 
 

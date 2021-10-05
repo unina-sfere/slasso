@@ -1489,6 +1489,7 @@ int lbfgs(
     int orthantwise_end
     )
     {
+    Rcout << linesearch << std::endl;
     int i, ret = 0;
     int k = 0;
     lbfgsfloatval_t fx;

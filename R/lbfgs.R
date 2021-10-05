@@ -1,4 +1,4 @@
-lbfgs_2<- function(call_eval, call_grad,  vars, environment = NULL, ...,
+lbfgsw<- function(call_eval, call_grad,  vars, environment = NULL, ...,
   invisible = 0, m = 6, epsilon = 1e-5, past = 0, delta = 0, 
   max_iterations = 0, linesearch_algorithm = "LBFGS_LINESEARCH_DEFAULT", 
   max_linesearch = 20, min_step = 1e-20, max_step = 1e+20, ftol = 1e-4, 

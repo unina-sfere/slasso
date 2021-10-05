@@ -1,7 +1,7 @@
 
 ## Data generation ---------------------------------------------------------
 
-
+#' @export
 simulate_data<-function(case,n_obs=3000) {
 
   length_tot<-500
@@ -153,8 +153,9 @@ simulate_data<-function(case,n_obs=3000) {
 
 
 ## B SLASSO----------------------------------
+#' @export
 slasso.fr.cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,ss_rule_par=0,lam_opt_method="min",
-                       lambdas_L=seq(-2,1,by=0.25),lambdas_s=seq(-4,-1),lambdas_t=seq(-4,1),B0=NA,max_iterations=2000){
+                       lambdas_L=seq(-2,1,by=0.25),lambdas_s=seq(-4,-1),lambdas_t=seq(-4,1),B0=NULL,cores=1,...){
   
   n_obs<-dim(X_fd$coefs)[2]
   W_X<-eval.penalty(basis_s)
@@ -195,16 +196,12 @@ slasso.fr.cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,ss_rule_par=0,lam_opt_meth
   env[["R_X"]] <-R_X
   env[["R_Y"]] <-R_Y
   
-  if(is.na(B0)[1]){
+  if(is.null(B0)){
     B_basis<-ginv(t(X_new)%*%X_new)%*%t(X_new)%*%Y_new%*%solve(W_Y)
   }
   else{
     B_basis<-B0
   }
-  
-  
-  
-  
   
   log_lambda_L_vec<-lambdas_L
   log_lambda_s_vec<-lambdas_s
@@ -239,31 +236,35 @@ slasso.fr.cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,ss_rule_par=0,lam_opt_meth
       env[["Y_newc"]] <- Y_minus
       env[["X_newc"]] <- X_minus
       
-      output <- lbfgs_2(objective(), gradient(), B_basis, lambda = lambda_L,weights = weights_vec,environment=env,max_iterations = max_iterations, invisible = 1)
+      output <- slasso:::lbfgsw(objective(), gradient(), B_basis, lambda = lambda_L,weights = weights_vec,environment=env,...)
       B_par<-matrix(output$par,n_basis_s,n_basis_t)
       Y_hat<-fd(t(X_i%*%B_par),basis_t)
       inpr_vec[[ll]]<-mean(diag(inprod(Y_i-Y_hat,Y_i-Y_hat)))
       
     }
-    env[["Y_newc"]] <- Y_new
-    env[["X_newc"]] <- X_new
-    fit_full <- lbfgs_2(objective(), gradient(), B_basis, lambda = lambda_L,weights = weights_vec,environment=env,max_iterations =100, invisible = 1)
-    B_full<-matrix(fit_full$par,nrow=n_basis_s,ncol = n_basis_t)
-    Beta_full<-bifd(B_full,basis_s,basis_t)
-    per_0<-get_per_0(Beta_full)
+    per_0<-0#get_per_0(Beta_full)
     mean<-mean(unlist(inpr_vec))
     sd<-sd(unlist(inpr_vec))/sqrt(K)
     out<-as.numeric(list(mean=mean,
                          sd=sd,
                          per_0=per_0))
     return(out)
-    
-    
   }
   
-  
-  cores <- detectCores()
-  vec_par<-mclapply(seq(1,length(comb_list[,1])),parr_func,mc.cores = cores)
+  if(cores==1){
+    vec_par<-lapply(seq(1,length(comb_list[,1])),parr_func)
+  }
+  else{
+    if(.Platform$OS.type=="unix")
+      vec_par<-parallel::mclapply(seq(1,length(comb_list[,1])),parr_func,mc.cores = cores)
+    else{
+      cl <- parallel::makeCluster(cores)
+      parallel::clusterExport(cl, c("comb_list","n_obs","env","K","Y_fd_cen","X_new","Y_new","B_basis","weights_vec", "n_basis_s","n_basis_t","basis_t"),envir = environment())
+      parallel::clusterEvalQ(cl, library(slasso))
+      vec_par<-parallel::parLapply(cl,seq(1,length(comb_list[,1])),parr_func)
+      parallel::stopCluster(cl)
+    }
+  }
   par<-sapply(vec_par,"[[",1)
   sd<-sapply(vec_par,"[[",2)
   per_0<-sapply(vec_par,"[[",3)
@@ -322,9 +323,9 @@ slasso.fr.cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,ss_rule_par=0,lam_opt_meth
   return(out)
   
 }
-
+#' @export
 slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
-                    lambdas_L,lambdas_s,lambdas_t,B0=NA,...){
+                    lambdas_L,lambdas_s,lambdas_t,B0=NULL,...){
   
   n_obs<-dim(X_fd$coefs)[2]
   W_X<-eval.penalty(basis_s)
@@ -365,7 +366,7 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
   env[["R_X"]] <-R_X
   env[["R_Y"]] <-R_Y
   
-  if(is.na(B0)){
+  if(is.null(B0)){
     B_basis<-ginv(t(X_new)%*%X_new)%*%t(X_new)%*%Y_new%*%solve(W_Y)
   }
   else{
@@ -373,13 +374,11 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
   }
   
   
-  
-  
   lambda_L<-10^lambdas_L
   env[["lambda_x_opt"]] <- 10^lambdas_s
   env[["lambda_y_opt"]] <-10^lambdas_t
   cat("SLASSO:",c(lambda_L, 10^lambdas_s, 10^lambdas_t),"     ")
-  output <- lbfgs_2(objective(), gradient(), B_basis, environment=env,lambda = lambda_L,weights = weights_vec,...)
+  output <- lbfgsw(objective(), gradient(), B_basis, environment=env,lambda = lambda_L,weights = weights_vec,...)
   B_par<-matrix(output$par,nrow=n_basis_s,ncol = n_basis_t)
   Beta_hat_fd<-bifd(B_par,basis_s,basis_t)
   
@@ -1168,17 +1167,17 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
 #   return(out)
 # }
 # 
-# mean_rep<-function (fdobj,nobs) 
-# {
-#   coef <- as.array(fdobj$coefs)
-#   coefd <- dim(coef)
-#   ndim <- length(coefd)
-#   basisobj <- fdobj$basis
-#   nbasis <- basisobj$nbasis
-#   coefmean <- apply(coef, 1, mean)
-#   mean_rep <- fd(matrix(rep(coefmean,nobs),coefd[1],nobs), basisobj)
-#   return(mean_rep)
-# }
+mean_rep<-function (fdobj,nobs)
+{
+  coef <- as.array(fdobj$coefs)
+  coefd <- dim(coef)
+  ndim <- length(coefd)
+  basisobj <- fdobj$basis
+  nbasis <- basisobj$nbasis
+  coefmean <- apply(coef, 1, mean)
+  mean_rep <- fd(matrix(rep(coefmean,nobs),coefd[1],nobs), basisobj)
+  return(mean_rep)
+}
 # innerProd<-function (A, B, gridbrk, intlen) 
 # {
 #   brkX <- gridbrk
