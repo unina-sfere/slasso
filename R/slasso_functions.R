@@ -13,19 +13,19 @@ simulate_data<-function(case,n_obs=3000) {
 
   domain<-c(0,1)
   n_basis_x<-32     #random chosen between 10 and 50
-  X_basis<-create.bspline.basis(domain,norder = 4,nbasis = n_basis_x)
+  X_basis<-fda::create.bspline.basis(domain,norder = 4,nbasis = n_basis_x)
   X_coef<-matrix(rnorm(n_obs*n_basis_x),nrow = n_basis_x,ncol = n_obs )
-  X_fd<-fd(X_coef,X_basis)
-  X<-eval.fd(grid_s,X_fd)
-  X<- as.matrix(t(as.matrix(rproc2fdata(n_obs,t=grid_s+1,sigma="brownian",par.list=list("scale"=1))[[1]])))
+  X_fd<-fda::fd(X_coef,X_basis)
+  X<-fda::eval.fd(grid_s,X_fd)
+  X<- as.matrix(t(as.matrix(fda.usc::rproc2fdata(n_obs,t=grid_s+1,sigma="brownian",par.list=list("scale"=1))[[1]])))
   # Generate ERROR ----------------------------------------------------------
 
 
   n_basis_eps<-20 #random chosen between 10 and 50
-  eps_basis<-create.bspline.basis(domain,norder = 4,nbasis = n_basis_eps)
+  eps_basis<-fda::create.bspline.basis(domain,norder = 4,nbasis = n_basis_eps)
   eps_coef<-matrix(rnorm(n_obs*n_basis_eps),nrow = n_basis_eps,ncol = n_obs )
-  eps_fd<-fd(eps_coef,eps_basis)
-  Eps<-t(eval.fd(grid_t,eps_fd))
+  eps_fd<-fda::fd(eps_coef,eps_basis)
+  Eps<-t(fda::eval.fd(grid_t,eps_fd))
 
 
   # Define beta -----------------------------------------------------------
@@ -125,9 +125,9 @@ simulate_data<-function(case,n_obs=3000) {
     }
   }
 
-  if(case=="Concurrent"){G<-t(eval.basis(grid_s,X_basis))%*%beta(grid_s,grid_t)}
+  if(case=="Concurrent"){G<-t(fda::eval.basis(grid_s,X_basis))%*%beta(grid_s,grid_t)}
   else{
-    G<-(1/length(grid_s))*t(eval.basis(grid_s,X_basis))%*%beta(grid_s,grid_t)
+    G<-(1/length(grid_s))*t(fda::eval.basis(grid_s,X_basis))%*%beta(grid_s,grid_t)
   }
   Y_parz<-t(X_coef)%*%G
    Y_parz<-(1/length(grid_s))*t(X)%*%beta(grid_s,grid_t)
@@ -135,14 +135,23 @@ simulate_data<-function(case,n_obs=3000) {
   ##for each observation SN=(sigma^2_signal/sigma^2_error)
   if(case=="Scenario I"){Y = Y_parz + Eps%*%diag(colVars(Eps)^(-1/2))}
   else{
-    k <- sqrt((colVars(Y_parz)+max(colVars(Y_parz)))/(signal_to_noise_ratio*colVars(Eps)))
+    k <- sqrt((matrixStats::colVars(Y_parz)+max(matrixStats::colVars(Y_parz)))/(signal_to_noise_ratio*matrixStats::colVars(Eps)))
 
     Y = Y_parz + Eps%*%diag(k)
   }
-
+  domain=c(0,1)
+  n_basis_x<-min(80,length_tot)
+  n_basis_y<-min(80,length_tot)
+  breaks_x<-seq(0,1,length.out = (n_basis_x-2))
+  breaks_y<-seq(0,1,length.out = (n_basis_y-2))
+  basis_x <- fda::create.bspline.basis(domain,breaks=breaks_x)
+  basis_y <- fda::create.bspline.basis(domain,breaks=breaks_y)
+  X_fd <- fda::smooth.basis(grid_s,X,basis_x)$fd
+  Y_fd <- fda::smooth.basis(grid_s,t(Y),basis_y)$fd
   out<-list(X=X,
             Y=t(Y),
             X_fd=X_fd,
+            Y_fd=Y_fd,
             Eps=Eps,
             beta_matrix=beta(grid_s,grid_t))
 
@@ -154,14 +163,15 @@ simulate_data<-function(case,n_obs=3000) {
 
 ## B SLASSO----------------------------------
 #' @export
-slasso.fr.cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,ss_rule_par=0,lam_opt_method="min",
+#' 
+slasso.fr_cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,ss_rule_par=0,lam_opt_method="min",
                        lambdas_L=seq(-2,1,by=0.25),lambdas_s=seq(-4,-1),lambdas_t=seq(-4,1),B0=NULL,cores=1,...){
   
   n_obs<-dim(X_fd$coefs)[2]
-  W_X<-eval.penalty(basis_s)
-  W_Y<-eval.penalty(basis_t)
-  R_X<-eval.penalty(basis_s,2)
-  R_Y<-eval.penalty(basis_t,2)
+  W_X<-fda::eval.penalty(basis_s)
+  W_Y<-fda::eval.penalty(basis_t)
+  R_X<-fda::eval.penalty(basis_s,2)
+  R_Y<-fda::eval.penalty(basis_t,2)
   domain_s<-basis_s$rangeval
   domain_t<-basis_t$rangeval
   n_basis_s<-basis_s$nbasis
@@ -175,15 +185,15 @@ slasso.fr.cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,ss_rule_par=0,lam_opt_meth
   weights_s<-diff(ext_break_s,lag=orders)/orders
   weights_t<-diff(ext_break_t,lag=ordert)/ordert
   weights_mat<-weights_s%o%weights_t
-  weights_vec<-vec(weights_mat)
+  weights_vec<-matrixcalc::vec(weights_mat)
   ##Centering data
-  X_mean<-mean.fd(X_fd)
-  Y_mean<-mean.fd(Y_fd)
-  X_fd_cen<-center.fd(X_fd)
-  Y_fd_cen<-center.fd(Y_fd)
+  X_mean<-fda::mean.fd(X_fd)
+  Y_mean<-fda::mean.fd(Y_fd)
+  X_fd_cen<-fda::center.fd(X_fd)
+  Y_fd_cen<-fda::center.fd(Y_fd)
   
-  X_new<-inprod(X_fd_cen,basis_s)
-  Y_new<-inprod(Y_fd_cen,basis_t)
+  X_new<-fda::inprod(X_fd_cen,basis_s)
+  Y_new<-fda::inprod(Y_fd_cen,basis_t)
   
   env <- new.env()
   #Matrix initialization
@@ -197,7 +207,7 @@ slasso.fr.cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,ss_rule_par=0,lam_opt_meth
   env[["R_Y"]] <-R_Y
   
   if(is.null(B0)){
-    B_basis<-ginv(t(X_new)%*%X_new)%*%t(X_new)%*%Y_new%*%solve(W_Y)
+    B_basis<-MASS::ginv(t(X_new)%*%X_new)%*%t(X_new)%*%Y_new%*%solve(W_Y)
   }
   else{
     B_basis<-B0
@@ -219,32 +229,28 @@ slasso.fr.cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,ss_rule_par=0,lam_opt_meth
     lambda_L<-as.numeric(lambdas[1])
     lambda_s<-as.numeric(lambdas[2])
     lambda_t<-as.numeric(lambdas[3])
-    
     env[["lambda_x_opt"]] <-lambda_s
     env[["lambda_y_opt"]] <-lambda_t
     ran_seq<-sample(seq(1, n_obs), n_obs, replace=FALSE)
-    split_vec<-split(ran_seq,cut(seq(1,n_obs),breaks=K,labels=FALSE))
+    split_vec<-base::split(ran_seq,cut(seq(1,n_obs),breaks=K,labels=FALSE))
     inpr_vec<-list()
     
-    
     for (ll in 1:K) {
-      #cat(ll)
       Y_i<-Y_fd_cen[split_vec[[ll]]]
       X_i<-X_new[split_vec[[ll]],]
       Y_minus<-Y_new[-split_vec[[ll]],]
       X_minus<-X_new[-split_vec[[ll]],]
       env[["Y_newc"]] <- Y_minus
       env[["X_newc"]] <- X_minus
-      
       output <- slasso:::lbfgsw(objective(), gradient(), B_basis, lambda = lambda_L,weights = weights_vec,environment=env,...)
       B_par<-matrix(output$par,n_basis_s,n_basis_t)
-      Y_hat<-fd(t(X_i%*%B_par),basis_t)
-      inpr_vec[[ll]]<-mean(diag(inprod(Y_i-Y_hat,Y_i-Y_hat)))
-      
+      Y_hat<-fda::fd(t(X_i%*%B_par),basis_t)
+      inpr_vec[[ll]]<-base::mean(diag(fda::inprod(Y_i-Y_hat,Y_i-Y_hat)))
     }
-    per_0<-0#get_per_0(Beta_full)
-    mean<-mean(unlist(inpr_vec))
-    sd<-sd(unlist(inpr_vec))/sqrt(K)
+    
+    per_0<-get_per_0(fda::bifd(B_par,basis_s,basis_t))
+    mean<-base::mean(unlist(inpr_vec))
+    sd<-stats::sd(unlist(inpr_vec))/sqrt(K)
     out<-as.numeric(list(mean=mean,
                          sd=sd,
                          per_0=per_0))
@@ -270,11 +276,9 @@ slasso.fr.cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,ss_rule_par=0,lam_opt_meth
   per_0<-sapply(vec_par,"[[",3)
   
   ##Lambdas optimum
-  
   lambdas_opt<-as.numeric(comb_list[max(which(par<=min(par))),])
   
   if(lam_opt_method!="min"){
-    
     
     len_s<-length(lambdas_s)
     len_t<-length(lambdas_t)
@@ -319,7 +323,7 @@ slasso.fr.cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,ss_rule_par=0,lam_opt_meth
             comb_list=comb_list,
             X=X_fd,
             Y=Y_fd,
-            type="SLASSO")
+            type="SLASSO_CV")
   return(out)
   
 }
@@ -328,10 +332,10 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
                     lambdas_L,lambdas_s,lambdas_t,B0=NULL,...){
   
   n_obs<-dim(X_fd$coefs)[2]
-  W_X<-eval.penalty(basis_s)
-  W_Y<-eval.penalty(basis_t)
-  R_X<-eval.penalty(basis_s,2)
-  R_Y<-eval.penalty(basis_t,2)
+  W_X<-fda::eval.penalty(basis_s)
+  W_Y<-fda::eval.penalty(basis_t)
+  R_X<-fda::eval.penalty(basis_s,2)
+  R_Y<-fda::eval.penalty(basis_t,2)
   domain_s<-basis_s$rangeval
   domain_t<-basis_t$rangeval
   n_basis_s<-basis_s$nbasis
@@ -345,15 +349,15 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
   weights_s<-diff(ext_break_s,lag=orders)/orders
   weights_t<-diff(ext_break_t,lag=ordert)/ordert
   weights_mat<-weights_s%o%weights_t
-  weights_vec<-vec(weights_mat)
+  weights_vec<-matrixcalc::vec(weights_mat)
   ##Centering data
-  X_mean<-mean.fd(X_fd)
-  Y_mean<-mean.fd(Y_fd)
-  X_fd_cen<-center.fd(X_fd)
-  Y_fd_cen<-center.fd(Y_fd)
+  X_mean<-fda::mean.fd(X_fd)
+  Y_mean<-fda::mean.fd(Y_fd)
+  X_fd_cen<-fda::center.fd(X_fd)
+  Y_fd_cen<-fda::center.fd(Y_fd)
   
-  X_new<-inprod(X_fd_cen,basis_s)
-  Y_new<-inprod(Y_fd_cen,basis_t)
+  X_new<-fda::inprod(X_fd_cen,basis_s)
+  Y_new<-fda::inprod(Y_fd_cen,basis_t)
   
   env <- new.env()
   #Matrix initialization
@@ -367,7 +371,7 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
   env[["R_Y"]] <-R_Y
   
   if(is.null(B0)){
-    B_basis<-ginv(t(X_new)%*%X_new)%*%t(X_new)%*%Y_new%*%solve(W_Y)
+    B_basis<-MASS::ginv(t(X_new)%*%X_new)%*%t(X_new)%*%Y_new%*%solve(W_Y)
   }
   else{
     B_basis<-B0
@@ -378,14 +382,16 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
   env[["lambda_x_opt"]] <- 10^lambdas_s
   env[["lambda_y_opt"]] <-10^lambdas_t
   cat("SLASSO:",c(lambda_L, 10^lambdas_s, 10^lambdas_t),"     ")
-  output <- lbfgsw(objective(), gradient(), B_basis, environment=env,lambda = lambda_L,weights = weights_vec,...)
+  output <- slasso:::lbfgsw(objective(), gradient(), B_basis, environment=env,lambda = lambda_L,weights = weights_vec,...)
   B_par<-matrix(output$par,nrow=n_basis_s,ncol = n_basis_t)
-  Beta_hat_fd<-bifd(B_par,basis_s,basis_t)
+  Beta_hat_fd<-fda::bifd(B_par,basis_s,basis_t)
   
   #Intercept
-  X_mean_new<-inprod(X_mean,basis_s)
-  alpha<-Y_mean-fd(t(X_mean_new%*%B_par),basis_t)
+  X_mean_new<-fda::inprod(X_mean,basis_s)
+  alpha<-Y_mean-fda::fd(t(X_mean_new%*%B_par),basis_t)
   
+  
+  per_0<-get_per_0(Beta_hat_fd)
   out<-list(B=B_par,
             Beta_hat_fd=Beta_hat_fd,
             alpha=alpha,
@@ -394,11 +400,32 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
             lambdas_t=lambdas_t,
             X=X_fd,
             Y=Y_fd,
+            per_0=per_0,
             type="SLASSO")
   return(out)
   
 }
 
+
+
+get_per_0<-function(mod,tol=10^-6){
+  length_grid<-500
+  if(is.null(mod$Beta_hat_fd$sbasis$rangeval)){
+    rangevals<-mod$sbasis$rangeval
+    rangevalt<-mod$tbasis$rangeval
+    beta<-mod
+  }
+  else{
+    rangevals<-mod$Beta_hat_fd$sbasis$rangeval
+    rangevalt<-mod$Beta_hat_fd$tbasis$rangeval
+    beta<-mod$Beta_hat_fd
+  }
+  grid_s<-seq(rangevals[1],rangevals[2],length.out = length_grid)
+  grid_t<-seq(rangevalt[1],rangevalt[2],length.out = length_grid)
+  A=fda::eval.bifd(seq(rangevals[1],rangevals[2],length.out = 500),seq(rangevalt[1],rangevalt[2],length.out = 500),beta)
+  out<-length(which(A<tol))/(500*500)
+  return(out)
+}
 # 
 # 
 
@@ -1167,17 +1194,17 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
 #   return(out)
 # }
 # 
-mean_rep<-function (fdobj,nobs)
-{
-  coef <- as.array(fdobj$coefs)
-  coefd <- dim(coef)
-  ndim <- length(coefd)
-  basisobj <- fdobj$basis
-  nbasis <- basisobj$nbasis
-  coefmean <- apply(coef, 1, mean)
-  mean_rep <- fd(matrix(rep(coefmean,nobs),coefd[1],nobs), basisobj)
-  return(mean_rep)
-}
+# mean_rep<-function (fdobj,nobs)
+# {
+#   coef <- as.array(fdobj$coefs)
+#   coefd <- dim(coef)
+#   ndim <- length(coefd)
+#   basisobj <- fdobj$basis
+#   nbasis <- basisobj$nbasis
+#   coefmean <- apply(coef, 1, mean)
+#   mean_rep <- fd(matrix(rep(coefmean,nobs),coefd[1],nobs), basisobj)
+#   return(mean_rep)
+# }
 # innerProd<-function (A, B, gridbrk, intlen) 
 # {
 #   brkX <- gridbrk
@@ -1247,24 +1274,7 @@ mean_rep<-function (fdobj,nobs)
 #             R2t=R2t)
 #   return(out)
 # }
-# get_per_0<-function(mod){
-#   length_grid<-500
-#   if(is.null(mod$Beta_hat_fd$sbasis$rangeval)){
-#     rangevals<-mod$sbasis$rangeval
-#     rangevalt<-mod$tbasis$rangeval
-#     beta<-mod
-#   }
-#   else{
-#     rangevals<-mod$Beta_hat_fd$sbasis$rangeval
-#     rangevalt<-mod$Beta_hat_fd$tbasis$rangeval
-#     beta<-mod$Beta_hat_fd
-#   }
-#   grid_s<-seq(rangevals[1],rangevals[2],length.out = length_grid)
-#   grid_t<-seq(rangevalt[1],rangevalt[2],length.out = length_grid)
-#   A=eval.bifd(seq(rangevals[1],rangevals[2],length.out = 500),seq(rangevalt[1],rangevalt[2],length.out = 500),beta)
-#   out<-length(which(A==0))/(500*500)
-#   return(out)
-# }
+
 # # 
 # #   matplot(t((1/1000)*t(eval.fd(grid_int,X_fd_tra[split_vec[[ll]]]))%*%eval.bifd(grid_int,grid_int,Beta_vero_fd)),type = "l")
 # #   matplot(t((1/1000)*t(eval.fd(grid_int,X_fd_tra[split_vec[[ll]]]))%*%eval.bifd(grid_int,grid_int,mod_ridge$model$Beta_fd)),type = "l")

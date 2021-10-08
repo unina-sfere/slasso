@@ -7,8 +7,7 @@
 \alias{{rofanova}-package}
 \title{slasso}
 \description{
-Implements the S-LASSO (RoFANOVA), described in Centofanti et al. (2021) <arXiv:>. 
-    It allows testing mean differences among groups of  functional data by being robust aginst the presence of outliers.
+Implements the S-LASSO (RoFANOVA), described in Centofanti et al. (2021) <arXiv:>. It allows testing mean differences among groups of functional data by being robust aginst the presence of outliers.
 }
 \details{
 \tabular{ll}{

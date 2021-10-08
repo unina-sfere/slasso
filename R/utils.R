@@ -83,10 +83,10 @@ gradient.body <- '
 typedef Rcpp::NumericVector (*funcPtr)(SEXP,SEXP);
 return(XPtr<funcPtr>(new funcPtr(&grad_fun)));'
 
-objective <- cxxfunction(signature(), body=objective.body,
+objective <- inline::cxxfunction(signature(), body=objective.body,
                          inc=objective.include, plugin="RcppArmadillo")
 
-gradient <- cxxfunction(signature(), body=gradient.body,
+gradient <- inline::cxxfunction(signature(), body=gradient.body,
                         inc=gradient.include, plugin="RcppArmadillo")
 
 
@@ -94,7 +94,7 @@ gradient <- cxxfunction(signature(), body=gradient.body,
 
 # Kronecker ---------------------------------------------------------------
 
-kron <- cxxfunction(signature(A="SEXP",B="SEXP"), body='
+kron <- inline::cxxfunction(signature(A="SEXP",B="SEXP"), body='
                     arma::mat A_m = Rcpp::as<arma::mat>(A);
                     arma::mat B_m = Rcpp::as<arma::mat>(B);
                     arma::mat z = kron(A_m,B_m);
