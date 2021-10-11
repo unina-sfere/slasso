@@ -2,47 +2,50 @@
 % Please edit documentation in R/slasso-package.R
 \docType{package}
 \name{slasso-package}
+\alias{slasso}
 \alias{slasso-package}
-\alias{_PACKAGE}
-\alias{{rofanova}-package}
-\title{slasso}
+\title{Smooth LASSO Estimator for the Function-on-Function Linear Regression Model}
 \description{
-Implements the S-LASSO (RoFANOVA), described in Centofanti et al. (2021) <arXiv:>. It allows testing mean differences among groups of functional data by being robust aginst the presence of outliers.
+Implements the Smooth LASSO Estimator for the Function-on-Function Linear Regression Model described in Centofanti et al. (2020) <arXiv:2007.00529>.
 }
 \details{
 \tabular{ll}{
-Package: \tab rofanova\cr
+Package: \tab slasso\cr
 Type: \tab Package\cr
-Version: \tab `r packageVersion("rofanova")` \cr
-Date: \tab  `r Sys.Date()` \cr
-License: \tab `r packageDescription("rofanova", fields="License")`\cr
+Version: \tab 1.0.0 \cr
+Date: \tab  2021-10-11 \cr
+License: \tab GPL (>= 3)\cr
 }
 }
 \examples{
-library(rofanova)
-library(rofanova)
-data_out<-simulate_data(scenario="one-way")
-label_1=data_out$label_1
-X_fdata<-data_out$X_fdata
-B=10
-cores=1
-per_list_median<-rofanova(X_fdata,label_1,B = B,family="median",cores=cores)
-pvalue_median_vec<-per_list_median$pval_vec
-per_list_huber<-rofanova(X_fdata,label_1,B = B,family="huber",cores=cores)
-pvalue_huber_vec<-per_list_huber$pval_vec
-per_list_bisquare<-rofanova(X_fdata,label_1,B = B,family="bisquare",cores=cores)
-pvalue_bisquare_vec<-per_list_bisquare$pval_vec
-per_list_hampel<-rofanova(X_fdata,label_1,B = B,family="hampel",cores=cores)
-pvalue_hampel_vec<-per_list_hampel$pval_vec
-per_list_optimal<-rofanova(X_fdata,label_1,B = B,family="optimal",cores=cores)
-pvalue_optimal<-per_list_optimal$pval
+\donttest{
+library(slasso)
+data<-simulate_data("Scenario II",n_obs=150)
+X_fd=data$X_fd
+Y_fd=data$Y_fd
+domain=c(0,1)
+n_basis_s<-60
+n_basis_t<-60
+breaks_s<-seq(0,1,length.out = (n_basis_s-2))
+breaks_t<-seq(0,1,length.out = (n_basis_t-2))
+basis_s <- fda::create.bspline.basis(domain,breaks=breaks_s)
+basis_t <- fda::create.bspline.basis(domain,breaks=breaks_t)
+
+mod_slasso_cv<-slasso.fr_cv(Y_fd = Y_fd,X_fd=X_fd,basis_s=basis_s,basis_t=basis_t,lambda_L_vec = 10^seq(0,1,by=1),lambda_s_vec = 10^-9,lambda_t_vec = 10^-7,B0=NULL,max_iterations=500,K=2,invisible=1,cores=1)
+mod_slasso<-slasso.fr(Y_fd = Y_fd,X_fd=X_fd,basis_s=basis_s,basis_t=basis_t,lambda_L = 10^0.7,lambda_s =10^-5,lambda_t = 10^-6,B0 =NULL,invisible=1,max_iterations=1000)
+
+plot(mod_slasso_cv)
+plot(mod_slasso)
+}
 }
 \references{
-Centofanti, F., Lepore, A., & Palumbo, B. (2021).
+Centofanti, F., Fontana, M., Lepore, A., & Vantini, S. (2020).
+Smooth LASSO Estimator for the Function-on-Function Linear Regression Model.
+\emph{arXiv preprint arXiv:2007.00529}.
 }
 \seealso{
-\code{\link{fusem}} \code{\link{funmad}}
+\code{\link{slasso.fr}},  \code{\link{slasso.fr_cv}}
 }
 \author{
-Fabio Centofanti, Antonio Lepore, Biagio Palumbo
+Fabio Centofanti, Matteo Fontana, Antonio Lepore, Simone Vantini
 }
