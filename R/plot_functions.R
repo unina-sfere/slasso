@@ -27,7 +27,7 @@ plot.slasso<-function(x,...){
   base::on.exit( graphics::par(oldpar))
   graphics::par(mfrow=c(1,2),pty="s")
   plot3D::image2D(z=A,x=seq(rangevals[1],rangevals[2],length.out = length_grid),y=seq(rangevalt[1],rangevalt[2],length.out = length_grid),xlab="s",ylab="t",pty="s")
-  persp(A,x=seq(rangevals[1],rangevals[2],length.out = length_grid),y=seq(rangevalt[1],rangevalt[2],length.out = length_grid),zlab="",xlab="s",ylab="t",ticktype="detailed",col="lightblue",shade = 0.75,border = NA)
+  graphics::persp(A,x=seq(rangevals[1],rangevals[2],length.out = length_grid),y=seq(rangevalt[1],rangevalt[2],length.out = length_grid),zlab="",xlab="s",ylab="t",ticktype="detailed",col="lightblue",shade = 0.75,border = NA)
   
 }
 
@@ -57,7 +57,7 @@ plot.slasso_cv<-function(x,...){
   graphics::mtext(text=labels_L,side=1,at=x,las=2,cex=0.75)
   graphics::mtext(text=as.character(round(zeros_i*100)),side=3,at=x,las=2,cex=0.75)
   # abline(v=which(CV_i==min(CV_i)))
-  abline(h=min(CV_i),lty=2,col=2)
+  graphics::abline(h=min(CV_i),lty=2,col=2)
   lamb_s<-unique(mod$comb_list[,2])
   lamb_t<-unique(mod$comb_list[,3])
   lamb_L<-unique(mod$comb_list[,1])

@@ -49,13 +49,14 @@
 #' X_fd=data$X_fd
 #' Y_fd=data$Y_fd
 #' domain=c(0,1)
-#' n_basis_s<-60
-#' n_basis_t<-60
+#' n_basis_s<-30
+#' n_basis_t<-30
 #' breaks_s<-seq(0,1,length.out = (n_basis_s-2))
 #' breaks_t<-seq(0,1,length.out = (n_basis_t-2))
 #' basis_s <- fda::create.bspline.basis(domain,breaks=breaks_s)
 #' basis_t <- fda::create.bspline.basis(domain,breaks=breaks_t)
-#' mod_slasso<-slasso.fr(Y_fd = Y_fd,X_fd=X_fd,basis_s=basis_s,basis_t=basis_t,lambdas_L = -1.5,lambdas_s =-8,lambdas_t = -7,B0 =NULL,invisible=1,max_iterations=10)
+#' mod_slasso<-slasso.fr(Y_fd = Y_fd,X_fd=X_fd,basis_s=basis_s,basis_t=basis_t,
+#' lambda_L = -1.5,lambda_s =-8,lambda_t = -7,B0 =NULL,invisible=1,max_iterations=10)
 slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
                     lambda_L,lambda_s,lambda_t,B0=NULL,...){
   
@@ -108,7 +109,7 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
   env[["lambda_x_opt"]] <- lambda_s
   env[["lambda_y_opt"]] <-lambda_t
   cat("SLASSO:",c(lambda_L, lambda_s, lambda_t),"     ")
-  output <- slasso:::lbfgsw(objective(), gradient(), B_basis, environment=env,lambda = lambda_L,weights = weights_vec,...)
+  output <- slasso:::lbfgsw(cxxfunplus::grab.cxxfun(slasso:::objective)(), cxxfunplus::grab.cxxfun(slasso:::gradient)(), B_basis, environment=env,lambda = lambda_L,weights = weights_vec,...)
   B_par<-matrix(output$par,nrow=n_basis_s,ncol = n_basis_t)
   Beta_hat_fd<-fda::bifd(B_par,basis_s,basis_t)
   
@@ -134,9 +135,9 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
 #' @title Cross-validation for the S-LASSO estimator
 #' @description K-fold cross-validation procedure to choose the tuning parameters for the S-LASSO estimator (Centofanti et al., 2020).
 #' @inheritParams slasso.fr
-#' @param lambda_L_seq Vector of regularization parameters of the functional LASSO penalty.
-#' @param lambda_s_seq Vector of regularization parameters of the smoothness penalty along the \code{s}-direction. 
-#' @param lambda_t_seq Vector of regularization parameters of the smoothness penalty along the \code{t}-direction. 
+#' @param lambda_L_vec Vector of regularization parameters of the functional LASSO penalty.
+#' @param lambda_s_vec Vector of regularization parameters of the smoothness penalty along the \code{s}-direction. 
+#' @param lambda_t_vec Vector of regularization parameters of the smoothness penalty along the \code{t}-direction. 
 #' @param K Number of folds. Default is 10.
 #' @param kss_rule_par Parameter of the \code{k}-standard error rule. If \code{kss_rule_par=0} the tuning parameters that minimize the estimated prediction error are chosen. 
 #' @param ncores If \code{ncores}>1, then parallel computing is used, with \code{ncores} cores. Default is 1.
@@ -162,7 +163,7 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
 #' Centofanti, F., Fontana, M., Lepore, A., & Vantini, S. (2020).
 #' Smooth LASSO Estimator for the Function-on-Function Linear Regression Model.
 #' \emph{arXiv preprint arXiv:2007.00529}.
-#' @seealso\code{\link{salsso.fr}}
+#' @seealso \code{\link{slasso.fr}}
 #' @examples
 #' \donttest{
 #' library(slasso)
@@ -176,7 +177,9 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
 #' breaks_t<-seq(0,1,length.out = (n_basis_t-2))
 #' basis_s <- fda::create.bspline.basis(domain,breaks=breaks_s)
 #' basis_t <- fda::create.bspline.basis(domain,breaks=breaks_t)
-#' mod_slasso_cv<-slasso.fr_cv(Y_fd = Y_fd,X_fd=X_fd,basis_s=basis_s,basis_t=basis_t,lambda_L_seq=seq(0,1,by=1),lambda_s_seq=c(-9),lambda_t_vec=-7,B0=NULL,lam_opt_method="min",max_iterations=1000,K=2,invisible=1,cores=2)
+#' mod_slasso_cv<-slasso.fr_cv(Y_fd = Y_fd,X_fd=X_fd,basis_s=basis_s,basis_t=basis_t,
+#' lambda_L_seq=seq(0,1,by=1),lambda_s_seq=c(-9),lambda_t_vec=-7,B0=NULL,
+#' max_iterations=10,K=2,invisible=1,ncores=1)
 #' }
 slasso.fr_cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,kss_rule_par=0.5,
                        lambda_L_vec=NULL,lambda_s_vec=NULL,lambda_t_vec=NULL,B0=NULL,ncores=1,...){
@@ -241,7 +244,7 @@ slasso.fr_cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,kss_rule_par=0.5,
     env[["lambda_y_opt"]] <-lambda_t
     ran_seq<-sample(seq(1, n_obs), n_obs, replace=FALSE)
     split_vec<-base::split(ran_seq,cut(seq(1,n_obs),breaks=K,labels=FALSE))
-    inpr_vec<-list()
+    inpr_vec<-numeric()
     
     for (ll in 1:K) {
       Y_i<-Y_fd_cen[split_vec[[ll]]]
@@ -250,19 +253,20 @@ slasso.fr_cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,kss_rule_par=0.5,
       X_minus<-X_new[-split_vec[[ll]],]
       env[["Y_newc"]] <- Y_minus
       env[["X_newc"]] <- X_minus
-      output <- slasso:::lbfgsw(objective(), gradient(), B_basis, lambda = lambda_L,weights = weights_vec,environment=env,...)
+      output <- slasso:::lbfgsw(cxxfunplus::grab.cxxfun(slasso:::objective)(), cxxfunplus::grab.cxxfun(slasso:::gradient)(), B_basis, lambda = lambda_L,weights = weights_vec,environment=env,...)
+      
       B_par<-matrix(output$par,n_basis_s,n_basis_t)
       Y_hat<-fda::fd(t(X_i%*%B_par),basis_t)
-      inpr_vec[[ll]]<-base::mean(diag(fda::inprod(Y_i-Y_hat,Y_i-Y_hat)))
+      inpr_vec[ll]<-base::mean(diag(fda::inprod(Y_i-Y_hat,Y_i-Y_hat)))
+      
     }
-    
     per_0<-get_per_0(fda::bifd(B_par,basis_s,basis_t))
-    mean<-base::mean(unlist(inpr_vec))
-    sd<-stats::sd(unlist(inpr_vec))/sqrt(K)
+    mean<-base::mean(inpr_vec)
+    sd<-stats::sd(inpr_vec)/sqrt(K)
     out<-as.numeric(list(mean=mean,
                          sd=sd,
                          per_0=per_0))
-    return(out)
+    return( out)
   }
   
   if(ncores==1){
@@ -273,8 +277,12 @@ slasso.fr_cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,kss_rule_par=0.5,
       vec_par<-parallel::mclapply(seq(1,length(comb_list[,1])),parr_func,mc.cores = ncores)
     else{
       cl <- parallel::makeCluster(ncores)
-      parallel::clusterExport(cl, c("comb_list","n_obs","env","K","Y_fd_cen","X_new","Y_new","B_basis","weights_vec", "n_basis_s","n_basis_t","basis_t"),envir = environment())
-      parallel::clusterEvalQ(cl, library(slasso))
+      parallel::clusterExport(cl, c( "comb_list","n_obs","env","K","Y_fd_cen","X_new","Y_new","B_basis","weights_vec", "n_basis_s","n_basis_t","basis_t","basis_s","..."),envir = environment())
+      parallel::clusterEvalQ(cl, {
+        library(slasso)
+        library(fda)
+        invisible(source('R/utils.R'))
+        })
       vec_par<-parallel::parLapply(cl,seq(1,length(comb_list[,1])),parr_func)
       parallel::stopCluster(cl)
     }
@@ -360,7 +368,7 @@ simulate_data<-function(scenario,n_obs=3000,type_x="Bspline") {
   if(type_x=="Bspline"){
     n_basis_x<-32     #random chosen between 10 and 50
     X_basis<-fda::create.bspline.basis(domain,norder = 4,nbasis = n_basis_x)
-    X_coef<-matrix(rnorm(n_obs*n_basis_x),nrow = n_basis_x,ncol = n_obs )
+    X_coef<-matrix(stats::rnorm(n_obs*n_basis_x),nrow = n_basis_x,ncol = n_obs )
     X_fd<-fda::fd(X_coef,X_basis)
     X<-fda::eval.fd(grid_s,X_fd)
   }
@@ -371,7 +379,7 @@ simulate_data<-function(scenario,n_obs=3000,type_x="Bspline") {
   # Generate ERROR ----------------------------------------------------------
   n_basis_eps<-20 #random chosen between 10 and 50
   eps_basis<-fda::create.bspline.basis(domain,norder = 4,nbasis = n_basis_eps)
-  eps_coef<-matrix(rnorm(n_obs*n_basis_eps),nrow = n_basis_eps,ncol = n_obs )
+  eps_coef<-matrix(stats::rnorm(n_obs*n_basis_eps),nrow = n_basis_eps,ncol = n_obs )
   eps_fd<-fda::fd(eps_coef,eps_basis)
   Eps<-t(fda::eval.fd(grid_t,eps_fd))
   
@@ -447,7 +455,7 @@ simulate_data<-function(scenario,n_obs=3000,type_x="Bspline") {
     Y_parz<-(1/length(grid_s))*t(X)%*%beta(grid_s,grid_t)
   }
   signal_to_noise_ratio<-4
-  if(case=="Scenario I"){Y = Y_parz + Eps%*%diag(colVars(Eps)^(-1/2))}
+  if(scenario=="Scenario I"){Y = Y_parz + Eps%*%diag(matrixStats::colVars(Eps)^(-1/2))}
   else{
     k <- sqrt((matrixStats::colVars(Y_parz)+max(matrixStats::colVars(Y_parz)))/(signal_to_noise_ratio*matrixStats::colVars(Eps)))
     Y = Y_parz + Eps%*%diag(k)

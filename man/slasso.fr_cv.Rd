@@ -32,17 +32,17 @@ slasso.fr_cv(
 
 \item{kss_rule_par}{Parameter of the \code{k}-standard error rule. If \code{kss_rule_par=0} the tuning parameters that minimize the estimated prediction error are chosen.}
 
+\item{lambda_L_vec}{Vector of regularization parameters of the functional LASSO penalty.}
+
+\item{lambda_s_vec}{Vector of regularization parameters of the smoothness penalty along the \code{s}-direction.}
+
+\item{lambda_t_vec}{Vector of regularization parameters of the smoothness penalty along the \code{t}-direction.}
+
 \item{B0}{Initial estimator of the basis coefficients matrix of the coefficient function. Should have dimensions in accordance with the basis dimensions of \code{basis_s} and \code{basis_t}.}
 
 \item{ncores}{If \code{ncores}>1, then parallel computing is used, with \code{ncores} cores. Default is 1.}
 
 \item{...}{Other arguments to be passed to the Orthant-Wise Limited-memory Quasi-Newton optimization function. See the \code{lbfgs} help page of the package \code{lbfgs}.}
-
-\item{lambda_L_seq}{Vector of regularization parameters of the functional LASSO penalty.}
-
-\item{lambda_s_seq}{Vector of regularization parameters of the smoothness penalty along the \code{s}-direction.}
-
-\item{lambda_t_seq}{Vector of regularization parameters of the smoothness penalty along the \code{t}-direction.}
 }
 \value{
 A list containing the following arguments:
@@ -78,7 +78,9 @@ breaks_s<-seq(0,1,length.out = (n_basis_s-2))
 breaks_t<-seq(0,1,length.out = (n_basis_t-2))
 basis_s <- fda::create.bspline.basis(domain,breaks=breaks_s)
 basis_t <- fda::create.bspline.basis(domain,breaks=breaks_t)
-mod_slasso_cv<-slasso.fr_cv(Y_fd = Y_fd,X_fd=X_fd,basis_s=basis_s,basis_t=basis_t,lambda_L_seq=seq(0,1,by=1),lambda_s_seq=c(-9),lambda_t_vec=-7,B0=NULL,lam_opt_method="min",max_iterations=1000,K=2,invisible=1,cores=2)
+mod_slasso_cv<-slasso.fr_cv(Y_fd = Y_fd,X_fd=X_fd,basis_s=basis_s,basis_t=basis_t,
+lambda_L_seq=seq(0,1,by=1),lambda_s_seq=c(-9),lambda_t_vec=-7,B0=NULL,
+max_iterations=10,K=2,invisible=1,ncores=1)
 }
 }
 \references{
@@ -87,5 +89,5 @@ Smooth LASSO Estimator for the Function-on-Function Linear Regression Model.
 \emph{arXiv preprint arXiv:2007.00529}.
 }
 \seealso{
-\code{\link{salsso.fr}}
+\code{\link{slasso.fr}}
 }

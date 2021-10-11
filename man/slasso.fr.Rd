@@ -68,13 +68,14 @@ data<-simulate_data("Scenario II",n_obs=150)
 X_fd=data$X_fd
 Y_fd=data$Y_fd
 domain=c(0,1)
-n_basis_s<-60
-n_basis_t<-60
+n_basis_s<-30
+n_basis_t<-30
 breaks_s<-seq(0,1,length.out = (n_basis_s-2))
 breaks_t<-seq(0,1,length.out = (n_basis_t-2))
 basis_s <- fda::create.bspline.basis(domain,breaks=breaks_s)
 basis_t <- fda::create.bspline.basis(domain,breaks=breaks_t)
-mod_slasso<-slasso.fr(Y_fd = Y_fd,X_fd=X_fd,basis_s=basis_s,basis_t=basis_t,lambdas_L = -1.5,lambdas_s =-8,lambdas_t = -7,B0 =NULL,invisible=1,max_iterations=10)
+mod_slasso<-slasso.fr(Y_fd = Y_fd,X_fd=X_fd,basis_s=basis_s,basis_t=basis_t,
+lambda_L = -1.5,lambda_s =-8,lambda_t = -7,B0 =NULL,invisible=1,max_iterations=10)
 }
 \references{
 Centofanti, F., Fontana, M., Lepore, A., & Vantini, S. (2020).

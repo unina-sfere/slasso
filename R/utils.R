@@ -83,13 +83,11 @@ gradient.body <- '
 typedef Rcpp::NumericVector (*funcPtr)(SEXP,SEXP);
 return(XPtr<funcPtr>(new funcPtr(&grad_fun)));'
 
-objective <- inline::cxxfunction(signature(), body=objective.body,
-                         inc=objective.include, plugin="RcppArmadillo")
+objective <- cxxfunplus::cxxfunctionplus(signature(), body=objective.body,
+                         inc=objective.include, plugin="RcppArmadillo",save.dso=TRUE)
 
-gradient <- inline::cxxfunction(signature(), body=gradient.body,
-                        inc=gradient.include, plugin="RcppArmadillo")
-
-
+gradient <- cxxfunplus::cxxfunctionplus(signature(), body=gradient.body,
+                        inc=gradient.include, plugin="RcppArmadillo",save.dso=TRUE)
 
 
 # Kronecker ---------------------------------------------------------------
@@ -102,39 +100,6 @@ kron <- inline::cxxfunction(signature(A="SEXP",B="SEXP"), body='
                     plugin="RcppArmadillo")
 
 
-# # Generalized Inverse -----------------------------------------------------------------
-# 
-# ginverse <- cxxfunction(signature(A="SEXP"), body='
-#                         #define ARMA_64BIT_WORD 1
-#                         #include <RcppArmadillo.h>
-#                         // [[Rcpp::depends(RcppArmadillo)]]
-#                         // [[Rcpp::plugins(cpp11)]] 
-#                         arma::mat A_m = Rcpp::as<arma::mat>(A);
-#                         arma::mat z = pinv(A_m);
-#                         return wrap( z );',
-#                         plugin="RcppArmadillo")
-
-
-
-
-# # P function for approximated df ---------------------------------------------------------------
-# 
-# P_func <- cxxfunction(signature(A="SEXP",B="SEXP",B_l="SEXP"), body='
-#                       arma::mat basis_values_x = Rcpp::as<arma::mat>(A);
-#                       arma::mat basis_values_y = Rcpp::as<arma::mat>(B);
-#                       arma::mat P_m = Rcpp::as<arma::mat>(B_l);
-#                       arma::mat somma(basis_values_x.n_rows*basis_values_y.n_rows,basis_values_x.n_rows*basis_values_y.n_rows);
-#                       somma.zeros(basis_values_x.n_rows*basis_values_y.n_rows,basis_values_x.n_rows*basis_values_y.n_rows);
-#                       double lenght_grid=basis_values_x.n_cols;
-#                       arma::mat D(lenght_grid,lenght_grid);
-#                       D.zeros(lenght_grid,lenght_grid);
-#                       for (int i=0; i<lenght_grid ;i++){
-#                       D.diag()=P_m.row(i);
-#                       somma= somma + kron(basis_values_y*D*trans(basis_values_y),basis_values_x.col(i)*trans(basis_values_x.col(i)));
-#                       Rcpp::Rcout << i;
-#                       }
-#                       return wrap( somma );',
-#                       plugin="RcppArmadillo")
 
 
 # Weighted L-BFGS ---------------------------------------------------------
@@ -153,7 +118,7 @@ lbfgsw<- function(call_eval, call_grad,  vars, environment = NULL, ...,
   } 
   
   # Initialize environment if NULL
-  if(!hasArg(environment)) environment <- new.env()
+  if(!methods::hasArg(environment)) environment <- new.env()
   
   # Set up parameters
   N <- length(vars)

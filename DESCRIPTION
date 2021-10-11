@@ -16,7 +16,7 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.2
 LinkingTo: 
-    Rcpp,RcppArmadillo
+    Rcpp, RcppArmadillo
 Imports: 
      Rcpp,
      RcppArmadillo,
@@ -25,7 +25,11 @@ Imports:
      matrixcalc,
      parallel,
      matrixStats,
-     inline
+     inline,
+     MASS,
+     plot3D,
+     methods,
+     cxxfunplus
 URL: https://github.com/unina-sfere/slasso
 BugReports: https://github.com/unina-sfere/rofanova/slasso
 SystemRequirements: GNU make
