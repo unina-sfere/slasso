@@ -14,9 +14,10 @@ knitr::opts_chunk$set(
 ```
 
 # slasso
-
 <!-- badges: start -->
-<!-- badges: end --> 
+
+[![R build status](https://github.com/unina-sfere/slasso/workflows/R-CMD-check/badge.svg)](https://github.com/unina-sfere/slasso/actions)
+<!-- badges: end -->
 
 The package  **slasso** implements the smooth LASSO  estimator (S-LASSO) for the Function-on-Function linear regression model proposed by Centofanti et al. (2020).
 The S-LASSO estimator is able to increase the interpretability of the model, by better locating regions where the coefficient function is zero, and to smoothly estimate non-zero values of the coefficient function.
