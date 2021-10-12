@@ -7,6 +7,7 @@ NULL
 #' @useDynLib slasso, .registration = TRUE
 ## usethis namespace: end
 NULL
+#' @importFrom inline cxxfunction
 
 
 #' @title Smooth LASSO Estimator for the Function-on-Function Linear Regression Model

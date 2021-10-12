@@ -1,4 +1,3 @@
-# C++ objective and gradient functions---------------------------------------------------------------------
 
 objective.include <- '
 Rcpp::NumericVector objective_fun(SEXP B_mat,SEXP env) {
@@ -90,19 +89,9 @@ gradient <- cxxfunplus::cxxfunctionplus(signature(), body=gradient.body,
                         inc=gradient.include, plugin="RcppArmadillo",save.dso=TRUE)
 
 
-# Kronecker ---------------------------------------------------------------
-
-kron <- inline::cxxfunction(signature(A="SEXP",B="SEXP"), body='
-                    arma::mat A_m = Rcpp::as<arma::mat>(A);
-                    arma::mat B_m = Rcpp::as<arma::mat>(B);
-                    arma::mat z = kron(A_m,B_m);
-                    return wrap( z );',
-                    plugin="RcppArmadillo")
 
 
 
-
-# Weighted L-BFGS ---------------------------------------------------------
 
 lbfgsw<- function(call_eval, call_grad,  vars, environment = NULL, ...,
                   invisible = 0, m = 6, epsilon = 1e-5, past = 0, delta = 0, 

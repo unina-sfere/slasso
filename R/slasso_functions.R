@@ -1,9 +1,7 @@
 
 
-
-
 #' @title Smooth LASSO estimator for the function-on-function linear regression model
-#' @description The smooth LASSO (S-LASSO) method for the function-on-function linear regression model provides interpretable coefficient function estimates that are both locally sparse and smooth (Centofanti et al., 2021).
+#' @description The smooth LASSO (S-LASSO) method for the function-on-function linear regression model provides interpretable coefficient function estimates that are both locally sparse and smooth (Centofanti et al., 2020).
 #' @param Y_fd An object of class fd corresponding to the response functions. 
 #' @param X_fd An object of class fd corresponding to the covariate functions. 
 #' @param basis_s B-splines basis along the \code{s}-direction of class basisfd. 
@@ -109,7 +107,7 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
   env[["lambda_x_opt"]] <- lambda_s
   env[["lambda_y_opt"]] <-lambda_t
   cat("SLASSO:",c(lambda_L, lambda_s, lambda_t),"     ")
-  output <- slasso:::lbfgsw(cxxfunplus::grab.cxxfun(slasso:::objective)(), cxxfunplus::grab.cxxfun(slasso:::gradient)(), B_basis, environment=env,lambda = lambda_L,weights = weights_vec,...)
+  output <- lbfgsw(cxxfunplus::grab.cxxfun(objective)(), cxxfunplus::grab.cxxfun(gradient)(), B_basis, environment=env,lambda = lambda_L,weights = weights_vec,...)
   B_par<-matrix(output$par,nrow=n_basis_s,ncol = n_basis_t)
   Beta_hat_fd<-fda::bifd(B_par,basis_s,basis_t)
   
@@ -139,14 +137,14 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
 #' @param lambda_s_vec Vector of regularization parameters of the smoothness penalty along the \code{s}-direction. 
 #' @param lambda_t_vec Vector of regularization parameters of the smoothness penalty along the \code{t}-direction. 
 #' @param K Number of folds. Default is 10.
-#' @param kss_rule_par Parameter of the \code{k}-standard error rule. If \code{kss_rule_par=0} the tuning parameters that minimize the estimated prediction error are chosen. 
+#' @param kss_rule_par Parameter of the \code{k}-standard error rule. If \code{kss_rule_par=0} the tuning parameters that minimize the estimated prediction error are chosen.  Default is 0.5.
 #' @param ncores If \code{ncores}>1, then parallel computing is used, with \code{ncores} cores. Default is 1.
 #' 
 #' @return   A list containing the following arguments:
 #' \itemize{
 #' \item \code{lambda_opt_vec}: Vector of optimal tuning parameters.
 #'
-#' \item \code{CV}:  Estimated prediction errors.ù
+#' \item \code{CV}:  Estimated prediction errors.
 #' 
 #' \item \code{CV_sd}:  Standard errors of the estimated prediction errors.
 #'
@@ -165,7 +163,6 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
 #' \emph{arXiv preprint arXiv:2007.00529}.
 #' @seealso \code{\link{slasso.fr}}
 #' @examples
-#' \donttest{
 #' library(slasso)
 #' data<-simulate_data("Scenario II",n_obs=150)
 #' X_fd=data$X_fd
@@ -178,9 +175,8 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
 #' basis_s <- fda::create.bspline.basis(domain,breaks=breaks_s)
 #' basis_t <- fda::create.bspline.basis(domain,breaks=breaks_t)
 #' mod_slasso_cv<-slasso.fr_cv(Y_fd = Y_fd,X_fd=X_fd,basis_s=basis_s,basis_t=basis_t,
-#' lambda_L_seq=seq(0,1,by=1),lambda_s_seq=c(-9),lambda_t_vec=-7,B0=NULL,
+#' lambda_L_vec=seq(0,1,by=1),lambda_s_vec=c(-9),lambda_t_vec=-7,B0=NULL,
 #' max_iterations=10,K=2,invisible=1,ncores=1)
-#' }
 slasso.fr_cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,kss_rule_par=0.5,
                        lambda_L_vec=NULL,lambda_s_vec=NULL,lambda_t_vec=NULL,B0=NULL,ncores=1,...){
   
@@ -253,7 +249,7 @@ slasso.fr_cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,kss_rule_par=0.5,
       X_minus<-X_new[-split_vec[[ll]],]
       env[["Y_newc"]] <- Y_minus
       env[["X_newc"]] <- X_minus
-      output <- slasso:::lbfgsw(cxxfunplus::grab.cxxfun(slasso:::objective)(), cxxfunplus::grab.cxxfun(slasso:::gradient)(), B_basis, lambda = lambda_L,weights = weights_vec,environment=env,...)
+      output <- lbfgsw(cxxfunplus::grab.cxxfun(objective)(), cxxfunplus::grab.cxxfun(gradient)(), B_basis, lambda = lambda_L,weights = weights_vec,environment=env,...)
       
       B_par<-matrix(output$par,n_basis_s,n_basis_t)
       Y_hat<-fda::fd(t(X_i%*%B_par),basis_t)

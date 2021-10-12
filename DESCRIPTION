@@ -17,6 +17,8 @@ LazyData: true
 RoxygenNote: 7.1.2
 LinkingTo: 
     Rcpp, RcppArmadillo
+Depends:
+     inline 
 Imports: 
      Rcpp,
      RcppArmadillo,
@@ -25,7 +27,6 @@ Imports:
      matrixcalc,
      parallel,
      matrixStats,
-     inline,
      MASS,
      plot3D,
      methods,

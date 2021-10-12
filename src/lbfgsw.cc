@@ -1,77 +1,13 @@
-/*
-  *      Limited memory BFGS (L-BFGS).
-*
-  * Adapted by Antonio Coppola, Harvard University 2014
-* Copyright (c) 1990, Jorge Nocedal
-* Copyright (c) 2007-2010 Naoaki Okazaki
-* All rights reserved.
-*
-  * Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-  *
-  * The above copyright notice and this permission notice shall be included in
-* all copies or substantial portions of the Software.
-*
-  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-* THE SOFTWARE.
-*/
-  
-  /* $Id$ */
-  
-  /*
-  This library is a C port of the FORTRAN implementation of Limited-memory
-Broyden-Fletcher-Goldfarb-Shanno (L-BFGS) method written by Jorge Nocedal.
-The original FORTRAN source code is available at:
-  http://www.ece.northwestern.edu/~nocedal/lbfgs.html
+#ifdef  HAVE_CONFIG_H
+#include <config.h>
+#endif/*HAVE_CONFIG_H*/
 
-The L-BFGS algorithm is described in:
-  - Jorge Nocedal.
-Updating Quasi-Newton Matrices with Limited Storage.
-<i>Mathematics of Computation</i>, Vol. 35, No. 151, pp. 773--782, 1980.
-- Dong C. Liu and Jorge Nocedal.
-On the limited memory BFGS method for large scale optimization.
-<i>Mathematical Programming</i> B, Vol. 45, No. 3, pp. 503-528, 1989.
-
-The line search algorithms used in this implementation are described in:
-  - John E. Dennis and Robert B. Schnabel.
-<i>Numerical Methods for Unconstrained Optimization and Nonlinear
-Equations</i>, Englewood Cliffs, 1983.
-- Jorge J. More and David J. Thuente.
-Line search algorithm with guaranteed sufficient decrease.
-<i>ACM Transactions on Mathematical Software (TOMS)</i>, Vol. 20, No. 3,
-pp. 286-307, 1994.
-
-This library also implements Orthant-Wise Limited-memory Quasi-Newton (OWL-QN)
-method presented in:
-  - Galen Andrew and Jianfeng Gao.
-Scalable training of L1-regularized log-linear models.
-In <i>Proceedings of the 24th International Conference on Machine
-Learning (ICML 2007)</i>, pp. 33-40, 2007.
-
-I would like to thank the original author, Jorge Nocedal, who has been
-distributing the effieicnt and explanatory implementation in an open source
-licence.
-*/
-  
-  #ifdef  HAVE_CONFIG_H
-  #include <config.h>
-  #endif/*HAVE_CONFIG_H*/
-  
-  #include <stdint.h>
-  #include <stdio.h>
-  #include <stdlib.h>
-  #include <math.h>
-  #include <iostream>
-  #include "lbfgs.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <iostream>
+#include "lbfgs.h"
 #include "evaluate.h"
 #include <Rcpp.h>
 

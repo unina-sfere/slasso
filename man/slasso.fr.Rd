@@ -60,7 +60,7 @@ A list containing the following arguments:
 }
 }
 \description{
-The smooth LASSO (S-LASSO) method for the function-on-function linear regression model provides interpretable coefficient function estimates that are both locally sparse and smooth (Centofanti et al., 2021).
+The smooth LASSO (S-LASSO) method for the function-on-function linear regression model provides interpretable coefficient function estimates that are both locally sparse and smooth (Centofanti et al., 2020).
 }
 \examples{
 library(slasso)

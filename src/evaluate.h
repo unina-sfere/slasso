@@ -1,8 +1,3 @@
-// Adapted from DEoptim (2.0.7) by Ardia et al to Rcpp/RcppArmadillo/Armadillo
-// Copyright (C) 2010  Dirk Eddelbuettel <edd@debian.org>
-// Adapted from RcppDE by Antonio Coppola, Harvard University, July 2014
-//
-// DEoptim is Copyright (C) 2009 David Ardia and Katharine Mullen
 
 #ifndef Rcpp_DE_evaluate_h_
 #define Rcpp_DE_evaluate_h_

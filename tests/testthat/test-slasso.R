@@ -1,5 +1,5 @@
 test_that("simulate_data", {
-  expect_is(simulate_data("Scenario II",n_obs=15),"list")}
+  expect_is(simulate_data("Scenario II",n_obs=500),"list")}
 )
 data<-simulate_data("Scenario II",n_obs=15)
 X_fd=data$X_fd
@@ -23,3 +23,5 @@ test_that("slasso.fr",
           { expect_is(slasso.fr(Y_fd = Y_fd,X_fd=X_fd,basis_s=basis_s,basis_t=basis_t,lambda_L = 1,lambda_s = 10^-5,lambda_t =  10^-5,invisible=1,max_iterations=2),"slasso")
           }
 )
+mod=slasso.fr(Y_fd = Y_fd,X_fd=X_fd,basis_s=basis_s,basis_t=basis_t,lambda_L = 10^-1,lambda_s = 10^-5,lambda_t =  10^-5,invisible=1,max_iterations=1000)
+plot(mod)
