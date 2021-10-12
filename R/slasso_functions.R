@@ -107,7 +107,11 @@ slasso.fr<-function(Y_fd,X_fd,basis_s,basis_t,
   env[["lambda_x_opt"]] <- lambda_s
   env[["lambda_y_opt"]] <-lambda_t
   cat("SLASSO:",c(lambda_L, lambda_s, lambda_t),"     ")
-  output <- lbfgsw(cxxfunplus::grab.cxxfun(objective)(), cxxfunplus::grab.cxxfun(gradient)(), B_basis, environment=env,lambda = lambda_L,weights = weights_vec,...)
+
+  cx_o <- cxxfunplus::grab.cxxfun(objective) 
+  cx_g <- cxxfunplus::grab.cxxfun(gradient) 
+  
+  output <- lbfgsw(cx_o(), cx_g(), B_basis, environment=env,lambda = lambda_L,weights = weights_vec,...)
   B_par<-matrix(output$par,nrow=n_basis_s,ncol = n_basis_t)
   Beta_hat_fd<-fda::bifd(B_par,basis_s,basis_t)
   
@@ -242,6 +246,10 @@ slasso.fr_cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,kss_rule_par=0.5,
     split_vec<-base::split(ran_seq,cut(seq(1,n_obs),breaks=K,labels=FALSE))
     inpr_vec<-numeric()
     
+    
+    cx_o <- cxxfunplus::grab.cxxfun(objective) 
+    cx_g <- cxxfunplus::grab.cxxfun(gradient) 
+    
     for (ll in 1:K) {
       Y_i<-Y_fd_cen[split_vec[[ll]]]
       X_i<-X_new[split_vec[[ll]],]
@@ -249,7 +257,8 @@ slasso.fr_cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,kss_rule_par=0.5,
       X_minus<-X_new[-split_vec[[ll]],]
       env[["Y_newc"]] <- Y_minus
       env[["X_newc"]] <- X_minus
-      output <- lbfgsw(cxxfunplus::grab.cxxfun(objective)(), cxxfunplus::grab.cxxfun(gradient)(), B_basis, lambda = lambda_L,weights = weights_vec,environment=env,...)
+     
+      output <- lbfgsw(cx_o(), cx_g(), B_basis, lambda = lambda_L,weights = weights_vec,environment=env,...)
       
       B_par<-matrix(output$par,n_basis_s,n_basis_t)
       Y_hat<-fda::fd(t(X_i%*%B_par),basis_t)

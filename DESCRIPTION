@@ -21,7 +21,6 @@ Depends:
      inline 
 Imports: 
      Rcpp,
-     RcppArmadillo,
      fda,
      fda.usc,
      matrixcalc,
@@ -32,7 +31,7 @@ Imports:
      methods,
      cxxfunplus
 URL: https://github.com/unina-sfere/slasso
-BugReports: https://github.com/unina-sfere/rofanova/slasso
+BugReports: https://github.com/unina-sfere/slasso
 SystemRequirements: GNU make
 Suggests: 
     knitr,
