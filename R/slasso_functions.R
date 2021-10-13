@@ -246,7 +246,6 @@ slasso.fr_cv<-function(Y_fd,X_fd,basis_s,basis_t,K=10,kss_rule_par=0.5,
     split_vec<-base::split(ran_seq,cut(seq(1,n_obs),breaks=K,labels=FALSE))
     inpr_vec<-numeric()
     
-    
     cx_o <- cxxfunplus::grab.cxxfun(objective) 
     cx_g <- cxxfunplus::grab.cxxfun(gradient) 
     

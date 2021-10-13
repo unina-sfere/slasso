@@ -13,7 +13,7 @@ Implements the Smooth LASSO Estimator for the Function-on-Function Linear Regres
 Package: \tab slasso\cr
 Type: \tab Package\cr
 Version: \tab 1.0.0 \cr
-Date: \tab  2021-10-12 \cr
+Date: \tab  2021-10-13 \cr
 License: \tab GPL (>= 3)\cr
 }
 }

@@ -20,6 +20,7 @@ Depends:
      inline 
 Imports: 
      Rcpp,
+     RcppArmadillo,
      fda,
      fda.usc,
      matrixcalc,

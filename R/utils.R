@@ -89,7 +89,38 @@ gradient <- cxxfunplus::cxxfunctionplus(signature(), body=gradient.body,
                         inc=gradient.include, plugin="RcppArmadillo",save.dso=TRUE)
 
 
+cxxfunctionplus2<-function (sig = character(), body = character(), plugin = "default", 
+          includes = "", settings = inline::getPlugin(plugin), save.dso = FALSE, 
+          ..., verbose = FALSE) 
+{
+  fx <- inline::cxxfunction(sig = sig, body = body, plugin = plugin, 
+                    includes = includes, settings = settings, ..., verbose = verbose)
+  dso.last.path <- dso.path2(fx)
+  dso.bin <- if (save.dso) 
+    read.dso2(dso.last.path)
+  else raw(0)
+  dso.filename <- sub("\\.[^.]*$", "", basename(dso.last.path))
+  if (!is.list(sig)) {
+    sig <- list(sig)
+    names(sig) <- dso.filename
+  }
+  dso <- methods::new("cxxdso", sig = sig, dso.saved = save.dso, dso.filename = dso.filename, 
+             dso.bin = dso.bin, system = R.version$system, .MISC = new.env())
+  assign("cxxfun", fx, envir = dso@.MISC)
+  assign("dso.last.path", dso.last.path, envir = dso@.MISC)
+  return(dso)
+}
 
+read.dso2<-function (path) 
+{
+  n <- base::file.info(path)$size
+  readBin(path, what = "raw", n = n)
+}
+dso.path2<-function (fx) 
+{
+  dllinfo <- inline::getDynLib(fx)
+  dllinfo[["path"]]
+}
 
 
 
