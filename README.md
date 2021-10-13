@@ -4,6 +4,9 @@
 # slasso
 
 <!-- badges: start -->
+
+[![R build
+status](https://github.com/unina-sfere/slasso/workflows/R-CMD-check/badge.svg)](https://github.com/unina-sfere/slasso/actions)
 <!-- badges: end -->
 
 The package **slasso** implements the smooth LASSO estimator (S-LASSO)
