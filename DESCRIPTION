@@ -1,6 +1,6 @@
 Package: slasso
 Type: Package
-Title: Smooth LASSO Estimator for the Function-on-Function Linear Regression Model
+Title: S-LASSO Estimator for the Function-on-Function Linear Regression
 Version: 1.0.0
 Authors@R: c(
     person("Fabio", "Centofanti", 
@@ -10,7 +10,7 @@ Authors@R: c(
     person("Simone", "Vantini", role = c("aut")), 
     person("Matteo", "Fontana", role = c("aut"))
     )
-Description:  Implements the Smooth LASSO Estimator for the Function-on-Function Linear Regression Model described in Centofanti et al. (2020) <arXiv:2007.00529>.
+Description:  Implements the smooth LASSO estimator for the function-on-function linear regression model described in Centofanti et al. (2020) <arXiv:2007.00529>.
 License: GPL (>= 3)
 Encoding: UTF-8
 RoxygenNote: 7.1.2
