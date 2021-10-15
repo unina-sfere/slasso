@@ -7,6 +7,8 @@
 
 [![R build
 status](https://github.com/unina-sfere/slasso/workflows/R-CMD-check/badge.svg)](https://github.com/unina-sfere/slasso/actions)
+[![CRAN
+status](https://www.r-pkg.org/badges/version/slasso)](https://CRAN.R-project.org/package=slasso)
 <!-- badges: end -->
 
 The package **slasso** implements the smooth LASSO estimator (S-LASSO)
